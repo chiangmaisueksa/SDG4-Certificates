@@ -559,11 +559,6 @@
       <div class="stat-label">สถานศึกษา</div>
     </div>
     <div class="stat-card">
-      <div class="stat-icon">📋</div>
-      <div class="stat-number" id="stat-committee">0</div>
-      <div class="stat-label">กรรมการ</div>
-    </div>
-    <div class="stat-card">
       <div class="stat-icon">⭐</div>
       <div class="stat-number" id="stat-excellent">0</div>
       <div class="stat-label">ระดับดีเยี่ยม</div>
@@ -667,7 +662,6 @@ let currentPage = 1;
 // ===== ASYNC FETCH CSV DATA =====
 async function loadCSV() {
   try {
-    // ดึงข้อมูลจากไฟล์ชื่อ sdg4certificates.csv ที่เก็บไว้ที่เดียวกันใน GitHub
     const response = await fetch('sdg4certificates.csv');
     if (!response.ok) throw new Error('ไม่สามารถโหลดไฟล์ CSV ได้');
     
@@ -677,17 +671,14 @@ async function loadCSV() {
       header: true,
       skipEmptyLines: true,
       complete: function(results) {
-        // ประมวลผลและแปลงข้อมูล ลำดับที่ ให้เป็นตัวเลข
         allData = results.data.map(row => {
           if (row['ลำดับที่']) row['ลำดับที่'] = parseInt(row['ลำดับที่'], 10);
           return row;
         });
         filteredData = [...allData];
         
-        // ปิดหน้าจอ Loading เมื่อโหลดเสร็จสิ้น
         document.getElementById('loading-overlay').style.display = 'none';
         
-        // เริ่มคำนวณและสร้างองค์ประกอบ UI ทั้งหมดแบบ Dynamic
         buildDashboard();
         buildWinners();
         doSearch();
@@ -702,21 +693,17 @@ async function loadCSV() {
 // ===== DYNAMIC DASHBOARD CALCULATIONS =====
 function buildDashboard() {
   let total = allData.length;
-  let teacherCount = 0, schoolCount = 0, committeeCount = 0;
+  let teacherCount = 0, schoolCount = 0;
   let excellentCount = 0, veryGoodCount = 0;
 
-  // โครงสร้างตัวนับสำหรับแผนภูมิสรุปข้อมูล
   let awardMap = { 'รองชนะเลิศอันดับ 2': 0, 'ชนะเลิศอันดับ 1': 0, 'รองชนะเลิศอันดับ 1': 0, 'Popular Vote (ขวัญใจมหาชน)': 0 };
   let levelMap = { 'ดีเยี่ยม': 0, 'ดีมาก': 0, 'ไม่ระบุ': 0 };
   let typeMap = { 'ประเภท 1': 0, 'ประเภท 2': 0, 'ประเภท 3': 0, 'ประเภท 4': 0, 'ประเภท 5 SDG4': 0, 'ประเภท 5 SDG35': 0 };
 
   allData.forEach(r => {
-    // คำนวณกลุ่มการทำงาน
     if (r['กลุ่ม'] === 'ผู้บริหาร/ครู') teacherCount++;
     else if (r['กลุ่ม'] === 'สถานศึกษา') schoolCount++;
-    else if (r['กลุ่ม'] === 'กรรมการ') committeeCount++;
 
-    // คำนวณระดับรางวัล
     if (r['ระดับรางวัล'] === 'ดีเยี่ยม') excellentCount++;
     else if (r['ระดับรางวัล'] === 'ดีมาก') veryGoodCount++;
 
@@ -724,10 +711,8 @@ function buildDashboard() {
     else if (r['ระดับรางวัล'] === 'ดีมาก') levelMap['ดีมาก']++;
     else levelMap['ไม่ระบุ']++;
 
-    // คำนวณของรางวัล
     if (r['รางวัล'] && awardMap[r['รางวัล']] !== undefined) awardMap[r['รางวัล']]++;
 
-    // สแกนคีย์ประเภทรางวัล
     let tStr = r['ประเภท'] || '';
     if (tStr.includes('ประเภทที่ 1')) typeMap['ประเภท 1']++;
     else if (tStr.includes('ประเภทที่ 2')) typeMap['ประเภท 2']++;
@@ -739,16 +724,13 @@ function buildDashboard() {
     }
   });
 
-  // ฝังตัวเลขลง Stat Cards
   document.getElementById('stat-total').innerText = total;
   document.getElementById('stat-teacher').innerText = teacherCount;
   document.getElementById('stat-school').innerText = schoolCount;
-  document.getElementById('stat-committee').innerText = committeeCount;
   document.getElementById('stat-excellent').innerText = excellentCount;
   document.getElementById('stat-verygood').innerText = veryGoodCount;
   document.getElementById('header-total-badge').innerText = `📋 ${total} รายการ`;
 
-  // เรนเดอร์ แผนภูมิรางวัล (ตามสัดส่วนคีย์ข้อมูลสูงสุด)
   let maxAward = Math.max(...Object.values(awardMap), 1);
   document.getElementById('chart-awards-container').innerHTML = `
     ${renderBar('รองชนะเลิศ อ.2', awardMap['รองชนะเลิศอันดับ 2'], maxAward, 'blue', 'รองชนะเลิศอันดับ 2')}
@@ -757,7 +739,6 @@ function buildDashboard() {
     ${renderBar('Popular Vote', awardMap['Popular Vote (ขวัญใจมหาชน)'], maxAward, 'green', 'Popular Vote (ขวัญใจมหาชน)')}
   `;
 
-  // เรนเดอร์ แผนภูมิระดับรางวัล
   let maxLevel = Math.max(...Object.values(levelMap), 1);
   document.getElementById('chart-levels-container').innerHTML = `
     ${renderBar('ดีเยี่ยม', levelMap['ดีเยี่ยม'], maxLevel, 'blue')}
@@ -765,7 +746,6 @@ function buildDashboard() {
     ${renderBar('ไม่ระบุ', levelMap['ไม่ระบุ'], maxLevel, 'navy')}
   `;
 
-  // เรนเดอร์ แผนภูมิประเภท
   let maxType = Math.max(...Object.values(typeMap), 1);
   document.getElementById('chart-types-container').innerHTML = `
     ${renderBar('ประเภท 4 สิ่งแวดล้อม / พลเมืองโลก', typeMap['ประเภท 4'], maxType, 'blue', 'ประเภทที่ 4 ด้านสิ่งแวดล้อมและพลเมืองโลก')}
@@ -776,7 +756,6 @@ function buildDashboard() {
     ${renderBar('ประเภท 5 ความตระหนักรู้ SDG35', typeMap['ประเภท 5 SDG35'], maxType, 'blue', 'ประเภทที่ 5 ด้านการสร้างความตระหนักรู้ SDG35')}
   `;
 
-  // เรนเดอร์ รายละเอียด Grid แต่ละประเภท
   document.getElementById('type-details-container').innerHTML = `
     ${renderTypeCard('ประเภท 1', 'คุณภาพและนวัตกรรมการสอน', 'Quality Teaching & Learning', typeMap['ประเภท 1'])}
     ${renderTypeCard('ประเภท 2', 'ทักษะอาชีพและการมีงานทำ', 'Skills for Decent Work', typeMap['ประเภท 2'])}
@@ -787,7 +766,6 @@ function buildDashboard() {
   `;
 }
 
-// ===== HELPER FUNCTIONS FOR RENDERING =====
 function renderBar(label, value, max, color, title = '') {
   let pct = (value / max) * 100;
   return `
@@ -809,7 +787,6 @@ function renderTypeCard(num, title, subtitle, count) {
     </div>`;
 }
 
-// ===== TABS MANAGEMENT =====
 function switchTab(id) {
   document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -818,7 +795,6 @@ function switchTab(id) {
   if (id === 'search') { currentPage = 1; doSearch(); }
 }
 
-// ===== AWARD BADGES GENERATORS =====
 function awardBadge(award) {
   if (!award) return '<span class="award-none">—</span>';
   if (award.includes('ชนะเลิศอันดับ 1')) return `<span class="award-tag award-1">🥇 ${award}</span>`;
@@ -842,7 +818,6 @@ function shortType(t) {
   return t.substring(0,20)+'...';
 }
 
-// ===== REALTIME FILTERS & SEARCH =====
 function doSearch() {
   const q     = document.getElementById('searchInput').value.trim().toLowerCase();
   const group = document.getElementById('filterGroup').value;
@@ -917,7 +892,6 @@ function goPage(p) {
   document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
 }
 
-// ===== WINNERS SECTION GENERATOR =====
 function buildWinners() {
   const winners = allData.filter(r => r['รางวัล'] && r['ชื่อ-นามสกุล']);
   const byAward = {'ชนะเลิศอันดับ 1':[], 'รองชนะเลิศอันดับ 1':[], 'รองชนะเลิศอันดับ 2':[], 'Popular Vote (ขวัญใจมหาชน)':[]};
@@ -947,7 +921,6 @@ function buildWinners() {
   document.getElementById('winners-container').innerHTML = html;
 }
 
-// ===== INITIATE PROCESS =====
 window.addEventListener('DOMContentLoaded', loadCSV);
 </script>
 </body>
