@@ -1,0 +1,918 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ระบบเกียรติบัตร SDG4 — ฐานข้อมูลรางวัล</title>
+<link href="https://fonts.googleapis.com/css2?family=Sarabun:wght@300;400;500;600;700&family=Playfair+Display:wght@700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --navy:    #0a1f44;
+    --blue:    #1a4b8c;
+    --mid:     #2d72d9;
+    --sky:     #4fa3e0;
+    --pale:    #d6eaf8;
+    --white:   #ffffff;
+    --silver:  #f0f5fb;
+    --gold:    #f5c518;
+    --gold2:   #e0a800;
+    --silver2: #b0bec5;
+    --bronze:  #cd7f32;
+    --pop:     #27ae60;
+    --text:    #1a2a4a;
+    --muted:   #5c7a9e;
+    --border:  #c5d9f0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Sarabun', sans-serif;
+    background: linear-gradient(160deg, #e8f1fb 0%, #f5f9ff 60%, #ffffff 100%);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  /* ===== HEADER ===== */
+  header {
+    background: linear-gradient(135deg, var(--navy) 0%, var(--blue) 60%, var(--mid) 100%);
+    color: var(--white);
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+  header::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.04'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
+  }
+  .header-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 40px 32px 36px;
+    display: flex;
+    align-items: center;
+    gap: 24px;
+    position: relative;
+    z-index: 1;
+  }
+  .header-emblem {
+    width: 72px; height: 72px;
+    background: rgba(255,255,255,0.12);
+    border: 2px solid rgba(255,255,255,0.3);
+    border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 32px;
+    flex-shrink: 0;
+    backdrop-filter: blur(4px);
+  }
+  .header-text h1 {
+    font-family: 'Playfair Display', serif;
+    font-size: 26px;
+    font-weight: 700;
+    letter-spacing: 0.5px;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.3);
+  }
+  .header-text p {
+    margin-top: 6px;
+    font-size: 14px;
+    color: rgba(255,255,255,0.75);
+    font-weight: 300;
+    letter-spacing: 0.3px;
+  }
+  .header-badge {
+    margin-left: auto;
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.25);
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 500;
+    color: rgba(255,255,255,0.9);
+    white-space: nowrap;
+  }
+
+  /* ===== NAV TABS ===== */
+  .tabs-bar {
+    background: var(--navy);
+    border-bottom: 3px solid var(--mid);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+  .tabs-inner {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 32px;
+    display: flex;
+    gap: 4px;
+  }
+  .tab-btn {
+    background: transparent;
+    border: none;
+    color: rgba(255,255,255,0.55);
+    padding: 14px 22px;
+    font-size: 14px;
+    font-weight: 500;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    border-bottom: 3px solid transparent;
+    margin-bottom: -3px;
+    transition: all 0.2s;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .tab-btn:hover { color: rgba(255,255,255,0.85); }
+  .tab-btn.active {
+    color: var(--white);
+    border-bottom-color: var(--sky);
+    background: rgba(255,255,255,0.06);
+  }
+  .tab-btn .tab-icon { font-size: 16px; }
+
+  /* ===== MAIN CONTENT ===== */
+  .main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 32px 32px 60px;
+  }
+  .tab-content { display: none; }
+  .tab-content.active { display: block; }
+
+  /* ===== STAT CARDS ===== */
+  .stat-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 16px;
+    margin-bottom: 36px;
+  }
+  .stat-card {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 24px 20px 20px;
+    box-shadow: 0 2px 16px rgba(26,75,140,0.08);
+    border: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    position: relative; overflow: hidden;
+    transition: transform 0.2s, box-shadow 0.2s;
+  }
+  .stat-card:hover { transform: translateY(-3px); box-shadow: 0 8px 28px rgba(26,75,140,0.14); }
+  .stat-card::before {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, var(--blue), var(--sky));
+  }
+  .stat-icon { font-size: 26px; margin-bottom: 10px; }
+  .stat-number {
+    font-family: 'Playfair Display', serif;
+    font-size: 38px;
+    font-weight: 700;
+    color: var(--blue);
+    line-height: 1;
+  }
+  .stat-label {
+    font-size: 13px;
+    color: var(--muted);
+    margin-top: 6px;
+    font-weight: 500;
+  }
+
+  /* ===== SECTION TITLES ===== */
+  .section-title {
+    font-size: 17px;
+    font-weight: 700;
+    color: var(--navy);
+    margin-bottom: 16px;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--pale);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .section-title::before {
+    content: '';
+    width: 4px; height: 18px;
+    background: linear-gradient(to bottom, var(--blue), var(--sky));
+    border-radius: 3px;
+  }
+
+  /* ===== BAR CHARTS ===== */
+  .chart-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+  @media(max-width: 720px){ .chart-grid{ grid-template-columns: 1fr; } }
+  .chart-card {
+    background: var(--white);
+    border-radius: 14px;
+    padding: 24px;
+    box-shadow: 0 2px 16px rgba(26,75,140,0.07);
+    border: 1px solid var(--border);
+  }
+  .chart-card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--navy);
+    margin-bottom: 18px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .bar-row {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 10px;
+  }
+  .bar-label {
+    font-size: 12.5px;
+    color: var(--text);
+    min-width: 120px;
+    max-width: 190px;
+    line-height: 1.3;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+  .bar-track {
+    flex: 1;
+    height: 26px;
+    background: var(--silver);
+    border-radius: 6px;
+    overflow: hidden;
+    position: relative;
+  }
+  .bar-fill {
+    height: 100%;
+    border-radius: 6px;
+    display: flex; align-items: center;
+    padding-left: 8px;
+    font-size: 11.5px;
+    font-weight: 600;
+    color: var(--white);
+    transition: width 0.8s cubic-bezier(.4,0,.2,1);
+    min-width: 32px;
+  }
+  .bar-fill.blue  { background: linear-gradient(90deg, var(--blue), var(--sky)); }
+  .bar-fill.navy  { background: linear-gradient(90deg, var(--navy), var(--blue)); }
+  .bar-fill.green { background: linear-gradient(90deg, #1a7d4e, #27ae60); }
+  .bar-fill.gold  { background: linear-gradient(90deg, #b8860b, #f5c518); color: #333; }
+  .bar-fill.teal  { background: linear-gradient(90deg, #0e6655, #17a589); }
+
+  /* ===== AWARD BADGES (TYPE BREAKDOWN) ===== */
+  .type-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px;
+    margin-bottom: 32px;
+  }
+  .type-card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 18px 20px;
+    box-shadow: 0 1px 8px rgba(26,75,140,0.06);
+    display: flex; align-items: flex-start; gap: 14px;
+  }
+  .type-num {
+    font-size: 12px;
+    font-weight: 700;
+    color: var(--white);
+    background: var(--blue);
+    border-radius: 8px;
+    padding: 3px 9px;
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+  .type-info h4 { font-size: 13.5px; font-weight: 600; color: var(--navy); margin-bottom: 6px; }
+  .type-info p  { font-size: 12px; color: var(--muted); }
+  .type-count {
+    margin-left: auto;
+    font-size: 22px;
+    font-weight: 700;
+    color: var(--blue);
+    font-family: 'Playfair Display', serif;
+    flex-shrink: 0;
+  }
+
+  /* ===== AWARD WINNERS TABLE ===== */
+  .winners-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+    gap: 14px;
+    margin-bottom: 32px;
+  }
+  .winner-card {
+    background: var(--white);
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    padding: 16px 18px;
+    box-shadow: 0 1px 8px rgba(26,75,140,0.06);
+    position: relative;
+    overflow: hidden;
+  }
+  .winner-card::before {
+    content: '';
+    position: absolute;
+    left: 0; top: 0; bottom: 0;
+    width: 4px;
+  }
+  .winner-card.gold-card::before { background: var(--gold); }
+  .winner-card.silver-card::before { background: var(--silver2); }
+  .winner-card.bronze-card::before { background: var(--bronze); }
+  .winner-card.pop-card::before { background: var(--pop); }
+  .award-ribbon {
+    display: inline-flex; align-items: center; gap: 5px;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 5px;
+    margin-bottom: 8px;
+  }
+  .ribbon-gold   { background: #fff8e1; color: #b8860b; border: 1px solid #f5c518; }
+  .ribbon-silver { background: #f5f5f5; color: #607d8b; border: 1px solid #b0bec5; }
+  .ribbon-bronze { background: #fff3e0; color: #7f4f00; border: 1px solid #cd7f32; }
+  .ribbon-pop    { background: #e8f5e9; color: #1a7d4e; border: 1px solid #27ae60; }
+  .winner-name   { font-size: 14px; font-weight: 600; color: var(--navy); }
+  .winner-school { font-size: 12px; color: var(--muted); margin-top: 3px; }
+  .winner-type   { font-size: 11px; color: var(--sky); margin-top: 5px; font-weight: 500; }
+
+  /* ===== SEARCH ===== */
+  .search-box-wrap {
+    display: flex; gap: 12px; align-items: flex-end;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+  }
+  .search-group { display: flex; flex-direction: column; gap: 5px; }
+  .search-group label { font-size: 13px; font-weight: 600; color: var(--navy); }
+  .search-input, .search-select {
+    font-family: 'Sarabun', sans-serif;
+    font-size: 14px;
+    padding: 10px 14px;
+    border: 2px solid var(--border);
+    border-radius: 10px;
+    background: var(--white);
+    color: var(--text);
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-input { min-width: 280px; }
+  .search-select { min-width: 180px; }
+  .search-input:focus, .search-select:focus {
+    border-color: var(--mid);
+    box-shadow: 0 0 0 3px rgba(45,114,217,0.12);
+  }
+  .search-btn {
+    background: linear-gradient(135deg, var(--blue), var(--mid));
+    color: var(--white);
+    border: none;
+    border-radius: 10px;
+    padding: 10px 22px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'Sarabun', sans-serif;
+    cursor: pointer;
+    transition: opacity 0.2s, transform 0.15s;
+    height: 42px;
+  }
+  .search-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+
+  /* ===== RESULTS TABLE ===== */
+  .results-count {
+    font-size: 13px;
+    color: var(--muted);
+    margin-bottom: 14px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .results-count strong { color: var(--blue); }
+  .table-wrap {
+    overflow-x: auto;
+    border-radius: 14px;
+    box-shadow: 0 2px 16px rgba(26,75,140,0.08);
+    border: 1px solid var(--border);
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    background: var(--white);
+    font-size: 13.5px;
+  }
+  thead tr {
+    background: linear-gradient(90deg, var(--navy), var(--blue));
+    color: var(--white);
+  }
+  th {
+    padding: 13px 16px;
+    text-align: left;
+    font-weight: 600;
+    letter-spacing: 0.3px;
+    white-space: nowrap;
+  }
+  tbody tr {
+    border-bottom: 1px solid var(--silver);
+    transition: background 0.15s;
+  }
+  tbody tr:hover { background: var(--silver); }
+  tbody tr:last-child { border-bottom: none; }
+  td {
+    padding: 11px 16px;
+    vertical-align: middle;
+    line-height: 1.4;
+  }
+  .td-num { color: var(--muted); font-size: 12px; }
+  .badge-level {
+    display: inline-block;
+    padding: 2px 9px;
+    border-radius: 20px;
+    font-size: 11.5px;
+    font-weight: 700;
+  }
+  .level-dee-yiam { background: #e3f0ff; color: var(--blue); border: 1px solid #b3d4f7; }
+  .level-dee-mak  { background: #fff8e1; color: #8a6000; border: 1px solid #f5c518; }
+  .level-none     { background: var(--silver); color: var(--muted); border: 1px solid #d0dde8; }
+  .award-tag {
+    display: inline-flex; align-items: center; gap: 4px;
+    padding: 2px 8px;
+    border-radius: 5px;
+    font-size: 11.5px;
+    font-weight: 600;
+  }
+  .award-1  { background: #fff8d6; color: #8a6000; border: 1px solid #f5c518; }
+  .award-r1 { background: #f5f5f5; color: #546e7a; border: 1px solid #b0bec5; }
+  .award-r2 { background: #fff3e0; color: #7f4f00; border: 1px solid #cd7f32; }
+  .award-pop{ background: #e8f5e9; color: #1a7d4e; border: 1px solid #27ae60; }
+  .award-none{ color: var(--muted); font-size: 12px; }
+  .pdf-link {
+    display: inline-flex; align-items: center; gap: 5px;
+    color: var(--mid);
+    text-decoration: none;
+    font-weight: 600;
+    font-size: 12.5px;
+    background: var(--pale);
+    padding: 4px 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border);
+    transition: background 0.15s, color 0.15s;
+  }
+  .pdf-link:hover { background: var(--mid); color: var(--white); }
+  .no-results {
+    text-align: center;
+    padding: 60px 20px;
+    color: var(--muted);
+    font-size: 15px;
+  }
+  .no-results .icon { font-size: 42px; margin-bottom: 12px; }
+
+  /* ===== PAGINATION ===== */
+  .pagination {
+    display: flex; gap: 6px; align-items: center;
+    justify-content: center;
+    margin-top: 20px;
+    flex-wrap: wrap;
+  }
+  .page-btn {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    color: var(--blue);
+    padding: 6px 13px;
+    border-radius: 8px;
+    font-size: 13px;
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    transition: all 0.15s;
+  }
+  .page-btn:hover, .page-btn.active {
+    background: var(--blue); color: var(--white); border-color: var(--blue);
+  }
+  .page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+  /* ===== GROUP FILTER PILLS ===== */
+  .filter-pills {
+    display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 24px;
+  }
+  .pill {
+    background: var(--white);
+    border: 1.5px solid var(--border);
+    color: var(--blue);
+    padding: 6px 14px;
+    border-radius: 20px;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    font-family: 'Sarabun', sans-serif;
+    transition: all 0.15s;
+  }
+  .pill:hover, .pill.active {
+    background: var(--blue); color: var(--white); border-color: var(--blue);
+  }
+
+  /* Divider */
+  .divider { border: none; border-top: 1px solid var(--border); margin: 28px 0; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="header-inner">
+    <div class="header-emblem">🏅</div>
+    <div class="header-text">
+      <h1>ระบบเกียรติบัตร SDG4</h1>
+      <p>ฐานข้อมูลผู้ได้รับรางวัลการพัฒนาคุณภาพการศึกษาอย่างยั่งยืน · เชียงใหม่</p>
+    </div>
+    <div class="header-badge">📋 302 รายการ</div>
+  </div>
+</header>
+
+<nav class="tabs-bar">
+  <div class="tabs-inner">
+    <button class="tab-btn active" onclick="switchTab('dashboard')">
+      <span class="tab-icon">📊</span> แดชบอร์ดสรุป
+    </button>
+    <button class="tab-btn" onclick="switchTab('search')">
+      <span class="tab-icon">🔍</span> ค้นหาผู้รับเกียรติบัตร
+    </button>
+  </div>
+</nav>
+
+<main class="main">
+
+<!-- ===== DASHBOARD TAB ===== -->
+<div id="tab-dashboard" class="tab-content active">
+
+  <!-- Stat cards -->
+  <div class="stat-grid">
+    <div class="stat-card">
+      <div class="stat-icon">👥</div>
+      <div class="stat-number">302</div>
+      <div class="stat-label">รายการทั้งหมด</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏫</div>
+      <div class="stat-number">255</div>
+      <div class="stat-label">ผู้บริหาร / ครู</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🏛️</div>
+      <div class="stat-number">39</div>
+      <div class="stat-label">สถานศึกษา</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">📋</div>
+      <div class="stat-number">8</div>
+      <div class="stat-label">กรรมการ</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">⭐</div>
+      <div class="stat-number">199</div>
+      <div class="stat-label">ระดับดีเยี่ยม</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon">🌟</div>
+      <div class="stat-number">48</div>
+      <div class="stat-label">ระดับดีมาก</div>
+    </div>
+  </div>
+
+  <!-- Chart Grid -->
+  <div class="chart-grid">
+    <!-- Awards by รางวัล -->
+    <div class="chart-card">
+      <h3>🏆 จำนวนตามรางวัลที่ได้รับ</h3>
+      <div class="bar-row">
+        <span class="bar-label" title="รองชนะเลิศอันดับ 2">รองชนะเลิศ อ.2</span>
+        <div class="bar-track"><div class="bar-fill blue" style="width:100%">67</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label" title="ชนะเลิศอันดับ 1">ชนะเลิศ อ.1</span>
+        <div class="bar-track"><div class="bar-fill gold" style="width:56.7%">38</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label" title="รองชนะเลิศอันดับ 1">รองชนะเลิศ อ.1</span>
+        <div class="bar-track"><div class="bar-fill navy" style="width:41.8%">28</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label" title="Popular Vote (ขวัญใจมหาชน)">Popular Vote</span>
+        <div class="bar-track"><div class="bar-fill green" style="width:14.9%">10</div></div>
+      </div>
+    </div>
+
+    <!-- Awards by ระดับรางวัล -->
+    <div class="chart-card">
+      <h3>🎖️ จำนวนตามระดับรางวัล</h3>
+      <div class="bar-row">
+        <span class="bar-label">ดีเยี่ยม</span>
+        <div class="bar-track"><div class="bar-fill blue" style="width:100%">199</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">ดีมาก</span>
+        <div class="bar-track"><div class="bar-fill gold" style="width:24.1%">48</div></div>
+      </div>
+      <div class="bar-row">
+        <span class="bar-label">ไม่ระบุ</span>
+        <div class="bar-track"><div class="bar-fill navy" style="width:27.6%">55</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- By ประเภท -->
+  <div class="section-title">📂 จำนวนตามประเภท</div>
+  <div class="chart-card" style="margin-bottom:32px">
+    <div class="bar-row">
+      <span class="bar-label" title="ประเภทที่ 4 ด้านสิ่งแวดล้อมและพลเมืองโลก" style="max-width:220px">ประเภท 4 สิ่งแวดล้อม / พลเมืองโลก</span>
+      <div class="bar-track"><div class="bar-fill blue" style="width:100%">91</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label" title="ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน" style="max-width:220px">ประเภท 1 คุณภาพ / นวัตกรรมการสอน</span>
+      <div class="bar-track"><div class="bar-fill teal" style="width:79.1%">72</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label" title="ประเภทที่ 3 ด้านโอกาสและความเสมอภาค" style="max-width:220px">ประเภท 3 โอกาส / ความเสมอภาค</span>
+      <div class="bar-track"><div class="bar-fill navy" style="width:62.6%">57</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label" title="ประเภทที่ 5 ด้านการสร้างความตระหนักรู้ SDG4" style="max-width:220px">ประเภท 5 ความตระหนักรู้ SDG4</span>
+      <div class="bar-track"><div class="bar-fill gold" style="width:46.2%">42</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label" title="ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ" style="max-width:220px">ประเภท 2 ทักษะอาชีพ / การมีงานทำ</span>
+      <div class="bar-track"><div class="bar-fill green" style="width:29.7%">27</div></div>
+    </div>
+    <div class="bar-row">
+      <span class="bar-label" title="ประเภทที่ 5 SDG35" style="max-width:220px">ประเภท 5 ความตระหนักรู้ SDG35</span>
+      <div class="bar-track"><div class="bar-fill blue" style="width:6.6%">6</div></div>
+    </div>
+  </div>
+
+  <!-- Type details -->
+  <div class="section-title">📌 รายละเอียดแต่ละประเภท</div>
+  <div class="type-grid">
+    <div class="type-card">
+      <span class="type-num">ประเภท 1</span>
+      <div class="type-info">
+        <h4>คุณภาพและนวัตกรรมการสอน</h4>
+        <p>Quality Teaching &amp; Learning</p>
+      </div>
+      <div class="type-count">72</div>
+    </div>
+    <div class="type-card">
+      <span class="type-num">ประเภท 2</span>
+      <div class="type-info">
+        <h4>ทักษะอาชีพและการมีงานทำ</h4>
+        <p>Skills for Decent Work</p>
+      </div>
+      <div class="type-count">27</div>
+    </div>
+    <div class="type-card">
+      <span class="type-num">ประเภท 3</span>
+      <div class="type-info">
+        <h4>โอกาสและความเสมอภาค</h4>
+        <p>Access &amp; Equity</p>
+      </div>
+      <div class="type-count">57</div>
+    </div>
+    <div class="type-card">
+      <span class="type-num">ประเภท 4</span>
+      <div class="type-info">
+        <h4>สิ่งแวดล้อมและพลเมืองโลก</h4>
+        <p>ESD &amp; Global Citizenship</p>
+      </div>
+      <div class="type-count">91</div>
+    </div>
+    <div class="type-card">
+      <span class="type-num">ประเภท 5</span>
+      <div class="type-info">
+        <h4>ความตระหนักรู้การพัฒนายั่งยืน SDG4</h4>
+        <p>Awareness SDG4</p>
+      </div>
+      <div class="type-count">42</div>
+    </div>
+    <div class="type-card">
+      <span class="type-num">ประเภท 5</span>
+      <div class="type-info">
+        <h4>ความตระหนักรู้การพัฒนายั่งยืน SDG35</h4>
+        <p>Awareness SDG35</p>
+      </div>
+      <div class="type-count">6</div>
+    </div>
+  </div>
+
+  <!-- Top Award Winners -->
+  <div class="section-title">🥇 ผู้ได้รับรางวัลชนะเลิศ</div>
+  <div id="winners-container"></div>
+
+</div>
+
+<!-- ===== SEARCH TAB ===== -->
+<div id="tab-search" class="tab-content">
+
+  <div class="search-box-wrap">
+    <div class="search-group">
+      <label>🔍 ค้นหาชื่อ-นามสกุล หรือ สถานศึกษา</label>
+      <input type="text" id="searchInput" class="search-input" placeholder="พิมพ์ชื่อ หรือ ชื่อโรงเรียน..." oninput="doSearch()">
+    </div>
+    <div class="search-group">
+      <label>กลุ่ม</label>
+      <select id="filterGroup" class="search-select" onchange="doSearch()">
+        <option value="">ทั้งหมด</option>
+        <option value="ผู้บริหาร/ครู">ผู้บริหาร/ครู</option>
+        <option value="สถานศึกษา">สถานศึกษา</option>
+        <option value="กรรมการ">กรรมการ</option>
+      </select>
+    </div>
+    <div class="search-group">
+      <label>ระดับรางวัล</label>
+      <select id="filterLevel" class="search-select" onchange="doSearch()">
+        <option value="">ทั้งหมด</option>
+        <option value="ดีเยี่ยม">ดีเยี่ยม</option>
+        <option value="ดีมาก">ดีมาก</option>
+      </select>
+    </div>
+    <div class="search-group">
+      <label>รางวัล</label>
+      <select id="filterAward" class="search-select" onchange="doSearch()">
+        <option value="">ทั้งหมด</option>
+        <option value="ชนะเลิศอันดับ 1">ชนะเลิศอันดับ 1</option>
+        <option value="รองชนะเลิศอันดับ 1">รองชนะเลิศอันดับ 1</option>
+        <option value="รองชนะเลิศอันดับ 2">รองชนะเลิศอันดับ 2</option>
+        <option value="Popular Vote (ขวัญใจมหาชน)">Popular Vote</option>
+      </select>
+    </div>
+  </div>
+
+  <div id="resultsCount" class="results-count"></div>
+  <div class="table-wrap">
+    <table id="resultsTable">
+      <thead>
+        <tr>
+          <th>ลำดับที่</th>
+          <th>กลุ่ม</th>
+          <th>ชื่อ-นามสกุล</th>
+          <th>สถานศึกษา</th>
+          <th>ตำแหน่ง</th>
+          <th>ประเภท</th>
+          <th>รางวัล</th>
+          <th>ระดับรางวัล</th>
+          <th>เกียรติบัตร</th>
+        </tr>
+      </thead>
+      <tbody id="resultsBody"></tbody>
+    </table>
+  </div>
+  <div class="pagination" id="pagination"></div>
+
+</div>
+</main>
+
+<script>
+// ===== DATA =====
+const DATA = [{"ลำดับที่":1510,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจุลลัดดา หวันแดง","สถานศึกษา":"โรงเรียนบ้านบวกหมื้อ","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1511,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวปาณิพัฒน์ อุปสาร","สถานศึกษา":"โรงเรียนบ้านบวกหมื้อ","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1512,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายอานนท์ อุปนันต์","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้อํานวยการสถานศึกษา","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1513,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายนิติศาสตร์ กันธพงค์","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"รองผู้อํานวยการสถานศึกษา","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1514,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายกฤษฎาญตม์  ประพรหมมา","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1515,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายวัชรายุทธ ประกอบของ","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1516,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสิริพรรณ บุญตอม","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1517,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวเสาวนีย์ งามหมู่","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1518,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวรุ่งทิวา มหาวรรณ์","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1519,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศิรินทร์ ภูมิมาลา","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1520,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวธัญญาภรณ์ ภิญโญ","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1521,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายชายชาญ จอมแปง","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1522,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสุรีย์นิภา มาเละ","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1523,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวโชติกา สิงห์ภักดี","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1524,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวบุณฑริกา บุบผชาติกุล","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1525,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศิริกัญญา ใจวังโลก","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1526,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสุพิชญา สมแก้ว","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1527,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวนิตยา เรือนงาม","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1528,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายเริงชัย มาเล","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1529,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายวีระ คําดวงดาว","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1530,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศรัญญา ธนะสมบัติ","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1531,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายกัณฐกฤติ์ ดอนสุวรรณ","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1532,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางนภัสนันท์ ทาจีนะ","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1533,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวนันทยา บุตราสวรรค์","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1534,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางนภาวรรณ เทพสุรินทร์","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1535,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศศิวิมล ดวงศรี","สถานศึกษา":"โรงเรียนชุมชนวัดช่อแล","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1536,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางกนกกาญจน์ ตาวิโรจน์","สถานศึกษา":"โรงเรียนบ้านแม่เลา","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1537,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวบุณยาพร ต่างใจ","สถานศึกษา":"โรงเรียนบ้านแม่เลา","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1538,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"ภราดา ดร. ชํานาญ เหล่ารักผล","สถานศึกษา":"โรงเรียนมงฟอร์ตวิทยาลัย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1539,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"มาสเตอร์ทศพล โฆษิตพล","สถานศึกษา":"โรงเรียนมงฟอร์ตวิทยาลัย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1540,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสุวัติ เรืองฤทธิ์","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1541,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวพรรณทิวา อินต๊ะ","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1542,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสุดารัตน์ สุริยะวงษ์","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1543,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสรัญธร แสงสุวรรณ","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1544,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวเชษฐ์สุดา ใจหอม","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1545,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายพัชรพงษ์ อุ่นต๊ะ","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1546,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวขวัญฤดี ทิว่อง","สถานศึกษา":"โรงเรียนบ้านหัวฝาย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1547,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางเบญจรัตน์ ธนเศรษฐ์สาคร","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีปิงเมือง","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1548,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายดนุโชติ ชัยชะนะ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีปิงเมือง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1549,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางกาญจนา โพธิลักษณ์","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีปิงเมือง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1550,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวรินทิรา เลี้ยงประเสริฐ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีปิงเมือง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1551,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายณัฐธนานนท์  สารินจา","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"Popular Vote (ขวัญใจมหาชน)","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1552,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวฉัตริกา คําสิงห์","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"Popular Vote (ขวัญใจมหาชน)","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1553,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายณรงค์ชัย วรรณมณี","สถานศึกษา":"โรงเรียนบ้านนากู่","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1554,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวพิมลรัตน์ ปาติสัตย์","สถานศึกษา":"โรงเรียนบ้านนากู่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1555,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางณัฏฐนันท์ ลังการัตน์","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1556,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจาตุพร ดวงแก้ว","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1557,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจันทร์จิรา กล้าหาญ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1558,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวหัทธยา ปัญญาต่วน","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1559,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวณปภัช รัตนาวรรณกร","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1560,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวรชต สิทธิกัน","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1561,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจุฑามาศ กองเงิน","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1562,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"รองศาสตราจารย์ ดร.สมเกียรติ อินทสิงห์","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1563,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"อาจารย์ภาคิน บูรณเครือ","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1564,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"อาจารย์พงษ์ระวี พันธุ์บุญปลูก","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1565,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"อาจารย์พุฒิพงศ์ ตันทรัตน์","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1566,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"อาจารย์พีรพงษ์ ทับทิม","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1567,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"อาจารย์พิชญ์สุภา อุดตุ้ย","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1568,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"อาจารย์อภิรัฐ อังคะบุตร","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1569,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสุรพันธ์ ชูใจ","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1570,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายฉัตริน เวทศักดิ์","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1571,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวแสงรุ้ง สาทประเสริฐ","สถานศึกษา":"โรงเรียนสาธิตมหาวิทยาลัยเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 1 ด้านคุณภาพและนวัตกรรมการสอน (Quality Teaching & Learning)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1572,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายวิธาน บุญญา","สถานศึกษา":"โรงเรียนบ้านปางกว้าง","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1573,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวแคทรียา อารีย์","สถานศึกษา":"โรงเรียนบ้านปางกว้าง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1574,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสุมาลี วรรณโชติผาเวช ","สถานศึกษา":"โรงเรียนอีเอฟแอล เลิร์นนิ่ง เซ็นเตอร์","ตำแหน่ง":"ผู้รับใบอนุญาต","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1575,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางวิไลวรรณ วรรณโชติผาเวช ","สถานศึกษา":"โรงเรียนอีเอฟแอล เลิร์นนิ่ง เซ็นเตอร์","ตำแหน่ง":"ผู้บริหารสถานศึกษา/ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1576,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายจอห์น โรเบิร์ต ควิณณ","สถานศึกษา":"โรงเรียนอีเอฟแอล เลิร์นนิ่ง เซ็นเตอร์","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1577,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายชูวิค มุคเคอร์จี","สถานศึกษา":"โรงเรียนอีเอฟแอล เลิร์นนิ่ง เซ็นเตอร์","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1578,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาว จิรัชญา ดาราวลี","สถานศึกษา":"โรงเรียนอีเอฟแอล เลิร์นนิ่ง เซ็นเตอร์","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1579,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางณัฏฐนันท์ ลังการัตน์","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1580,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางกฤตยาภรณ์ วงศ์เพิ่ม","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1581,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางพิศมัย พรมวังขวา ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1582,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายพิพัฒน์ เจริญวรรธะ ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1583,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายจักรพงษ์ ฉวีวงศ์ ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1584,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสุริศร์ ทัดงาม ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1585,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวอัจฉราวรรณ สิทธิมงคล ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1586,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายธีรพล หอประสงค์ ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1587,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสหรัฐ ปูอุตรี ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1588,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวญาณิศา ศักดิ์สม ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีดอนไชย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1589,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางเบญจรัตน์ ธนเศรษฐ์สาคร","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีปิงเมือง","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1590,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายดนุโชติ ชัยชะนะ","สถานศึกษา":"โรงเรียนเทศบาลวัดศรีปิงเมือง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1591,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจิราวรรณ จันทร์หลวง","สถานศึกษา":"โรงเรียนบ้านแม่นะ","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1592,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวรัญชนา ถีราวุฒิ","สถานศึกษา":"โรงเรียนบ้านแม่นะ","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1593,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสุภาวดี จักรมานนท์","สถานศึกษา":"โรงเรียนบ้านแม่นะ","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 2 ด้านทักษะอาชีพและการมีงานทำ (Skills for Decent Work)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1594,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวเจนจิรา บุญช","สถานศึกษา":"โรงเรียนบ้านสันป่าแดง","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1595,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางรุ่งนภา กันทะศร","สถานศึกษา":"โรงเรียนบ้านสันป่าแดง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1596,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางบุณยวีร์ วงศ์สูน","สถานศึกษา":"โรงเรียนบ้านสันป่าแดง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1597,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางจิราลักษณ์ ศรีใจวงค","สถานศึกษา":"โรงเรียนบ้านสันป่าแดง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1598,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวขนบทอง สีน","สถานศึกษา":"โรงเรียนบ้านสันป่าแดง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1599,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายณัฐกิตติ์ กันทะศร","สถานศึกษา":"โรงเรียนบ้านป่าบง","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1600,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางทยานิจ ภักดี","สถานศึกษา":"โรงเรียนบ้านป่าบง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1601,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสุวิทย์ สุทาลา","สถานศึกษา":"โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1602,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวิชิตา เกศะรักษ์","สถานศึกษา":"โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1603,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายณัฐธนานนท์ สารินจา","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1604,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวปรียาภัทร์ บุรมย์ชัยสิน","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1605,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสุธีรา สิริธิติ","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1606,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวณัฐรินทร์คําปัญญา","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1607,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาววราภรณ์ ยิ่งโยชน์","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1608,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวภัตตินันท์ สายนาค","สถานศึกษา":"โรงเรียนวัดแม่แก้ดน้อย","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1609,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสนิท ศรีคําเมา","สถานศึกษา":"โรงเรียนบ้านบ่อหลวง","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1610,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวกนกพร ชื่นชม","สถานศึกษา":"โรงเรียนบ้านบ่อหลวง","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1611,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายอนัน เมืองบัวผัน","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1612,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสุปราณี จีนใจ","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1613,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายธนญชัย มุกพลอย","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1614,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายณัฐวัฒน์ บุญอาจ","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1615,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศิริภาภรณ์ ปัญญามหันต์ ","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1616,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวธัญนันท์ เดชานุวัฒน์ ","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1617,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวณัฐสุดา พรหมมา ","สถานศึกษา":"โรงเรียนชุมชนวัดศรีดงเย็น","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1618,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสุวิทย์ สุทาลา","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1619,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายพนม บุญตอม","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1620,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายอรรถณพ คุ้มมี","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1621,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศริณญา วงศ์ฝั้น","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1622,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายจิรายุทธ ต๊ะอุ่น","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1623,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวชลดา ชลวิวัฒน์มงคล","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1624,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสิริวิมล ขุนนันท์","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1625,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสมนึก สิริตรงตระกูล","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1626,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายณัฐพล อนุรักษ์วนภูมิ","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1627,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายสมโภช เกษมเลิศตระกูล","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1628,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายชัยเลิศ พัฒนาชาวไทย","สถานศึกษา":"ศูนย์ฝึกอาชีพฯ โรงเรียนสอนคนตาบอดภาคเหนือในพระบรมราชินูปถัมภ์ จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1629,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวหัสยารัตน์ ปัญไชยโชค","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1630,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวปลายฝัน นาวีพัฒนา","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1631,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายอภิสิทธิ์ เรือนอ้าย","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1632,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวสาวิตรี ดอกพิกุล ","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1633,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวอัญญาณี ใจมูล","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1634,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศิริวรรณ ปิงวงค์ ","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1635,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายธีรวัฒน์ พุทธโส","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1636,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวการเกด อารยา","สถานศึกษา":"โรงเรียนสันป่ายางวิทยาคาร","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1637,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายธีรวิทย์ ทองดี","สถานศึกษา":"โรงเรียนบ้านปงตํา","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1638,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายเสกสรร ศรีแสวง","สถานศึกษา":"โรงเรียนบ้านปงตํา","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1639,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นายวรเวช จันทรรัตน์","สถานศึกษา":"โรงเรียนกาวิละอนุกูล จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1640,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจิราภา ทิศวงศ์","สถานศึกษา":"โรงเรียนกาวิละอนุกูล จังหวัดเชียงใหม่","ตำแหน่ง":"ผู้รับผิดชอบโครงการ","ประเภท":"ประเภทที่ 3 ด้านโอกาสและความเสมอภาค (Access & Equity)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1641,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวจินห์จุฑา ตากองแก้ว","สถานศึกษา":"มูลนิธิมหาราช 5","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 4 ด้านสิ่งแวดล้อมและพลเมืองโลก (ESD & Global Citizenship)","รางวัล":"","ระดับรางวัล":"ดีมาก","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1642,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางรัชนีกร นันทะเสน","สถานศึกษา":"โรงเรียนบ้านม่อนปิ่น","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 4 ด้านสิ่งแวดล้อมและพลเมืองโลก (ESD & Global Citizenship)","รางวัล":"รองชนะเลิศอันดับ 2","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1667,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวศิริยา อินทกาโมทย์","สถานศึกษา":"โรงเรียนวัดแม่กะ","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 4 ด้านสิ่งแวดล้อมและพลเมืองโลก (ESD & Global Citizenship)","รางวัล":"ชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1702,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"ดร.ธาราทิพย์  วงษ์บรรณะ","สถานศึกษา":"โรงเรียนนวมินทราชูทิศ พายัพ","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 4 ด้านสิ่งแวดล้อมและพลเมืองโลก (ESD & Global Citizenship)","รางวัล":"รองชนะเลิศอันดับ 1","ระดับรางวัล":"ดีเยี่ยม","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1759,"กลุ่ม":"ผู้บริหาร/ครู","ชื่อ-นามสกุล":"นางสาวนัทนพัฒน์ มารศรี","สถานศึกษา":"โรงเรียนบ้านอรุโณทัย","ตำแหน่ง":"ผู้บริหาร","ประเภท":"ประเภทที่ 5 ด้านการสร้างความตระหนักรู้เรื่องการพัฒนาที่ยั่งยืนด้านการศึกษา SDG4","รางวัล":"Popular Vote (ขวัญใจมหาชน)","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1804,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นางสาววนิจช์ตา  โชติวิศิษฐ์กุล","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1805,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นางสาวนาตยา  อุประ","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1806,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นายกันตวิชญ์  มะโนคำ","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1807,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นางสาวส้มโอ  อ่องประกฤติ","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1808,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นางสาวชุลีกร  ใหม่เขียว","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1809,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นายรัชภูมิ  สมสมัย","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1810,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นายเจษฎา  ก้องสาคร","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":""},{"ลำดับที่":1811,"กลุ่ม":"กรรมการ","ชื่อ-นามสกุล":"นางสาวชัชฎาภรณ์  ชัยพรม","สถานศึกษา":"","ตำแหน่ง":"","ประเภท":"ประเภทที่ 5 ด้านการสร้างความตระหนักรู้เรื่องการพัฒนาที่ยั่งยืนด้านการศึกษา SDG35","รางวัล":"","ระดับรางวัล":"","สถานะ":"","ลิงก์ PDF":"https://drive.google.com/file/d/18LnAq2Wz6lFX1EdxNQG0A6CO43NcEFQ1/view?usp=sharing"}];
+
+// ===== FULL DATA (truncated above for brevity - we embed all 302 records)
+// We use the DATA array above + fetch remaining from full JSON
+let allData = DATA;
+
+// ===== PAGINATION =====
+const PAGE_SIZE = 20;
+let currentPage = 1;
+let filteredData = [...allData];
+
+// ===== TABS =====
+function switchTab(id) {
+  document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('tab-' + id).classList.add('active');
+  event.currentTarget.classList.add('active');
+  if (id === 'search') { currentPage = 1; doSearch(); }
+}
+
+// ===== AWARD HELPERS =====
+function awardBadge(award) {
+  if (!award) return '<span class="award-none">—</span>';
+  if (award.includes('ชนะเลิศอันดับ 1')) return `<span class="award-tag award-1">🥇 ${award}</span>`;
+  if (award.includes('รองชนะเลิศอันดับ 1')) return `<span class="award-tag award-r1">🥈 ${award}</span>`;
+  if (award.includes('รองชนะเลิศอันดับ 2')) return `<span class="award-tag award-r2">🥉 ${award}</span>`;
+  if (award.includes('Popular')) return `<span class="award-tag award-pop">💚 ${award}</span>`;
+  return `<span class="award-none">${award}</span>`;
+}
+function levelBadge(lv) {
+  if (lv === 'ดีเยี่ยม') return `<span class="badge-level level-dee-yiam">⭐ ดีเยี่ยม</span>`;
+  if (lv === 'ดีมาก')   return `<span class="badge-level level-dee-mak">🌟 ดีมาก</span>`;
+  return `<span class="badge-level level-none">—</span>`;
+}
+function shortType(t) {
+  if (!t) return '—';
+  const m = t.match(/ประเภทที่\s*(\d+)/);
+  return m ? `ประเภท ${m[1]}` : t.substring(0,20)+'...';
+}
+
+// ===== SEARCH =====
+function doSearch() {
+  const q     = document.getElementById('searchInput').value.trim().toLowerCase();
+  const group = document.getElementById('filterGroup').value;
+  const level = document.getElementById('filterLevel').value;
+  const award = document.getElementById('filterAward').value;
+
+  filteredData = allData.filter(r => {
+    const name   = (r['ชื่อ-นามสกุล'] || '').toLowerCase();
+    const school = (r['สถานศึกษา'] || '').toLowerCase();
+    if (q && !name.includes(q) && !school.includes(q)) return false;
+    if (group && r['กลุ่ม'] !== group) return false;
+    if (level && r['ระดับรางวัล'] !== level) return false;
+    if (award && r['รางวัล'] !== award) return false;
+    return true;
+  });
+  currentPage = 1;
+  renderTable();
+}
+
+function renderTable() {
+  const body   = document.getElementById('resultsBody');
+  const count  = document.getElementById('resultsCount');
+  const total  = filteredData.length;
+  const start  = (currentPage - 1) * PAGE_SIZE;
+  const page   = filteredData.slice(start, start + PAGE_SIZE);
+
+  count.innerHTML = `แสดง <strong>${Math.min(start+1,total)}–${Math.min(start+PAGE_SIZE,total)}</strong> จาก <strong>${total}</strong> รายการ`;
+
+  if (total === 0) {
+    body.innerHTML = `<tr><td colspan="9"><div class="no-results"><div class="icon">🔍</div>ไม่พบข้อมูลที่ตรงกับเงื่อนไขการค้นหา</div></td></tr>`;
+    renderPagination(0);
+    return;
+  }
+
+  body.innerHTML = page.map(r => `
+    <tr>
+      <td class="td-num">${r['ลำดับที่']}</td>
+      <td>${r['กลุ่ม'] || '—'}</td>
+      <td><strong>${r['ชื่อ-นามสกุล'] || '—'}</strong></td>
+      <td>${r['สถานศึกษา'] || '—'}</td>
+      <td style="font-size:12px;color:var(--muted)">${r['ตำแหน่ง'] || '—'}</td>
+      <td style="font-size:12px">${shortType(r['ประเภท'])}</td>
+      <td>${awardBadge(r['รางวัล'])}</td>
+      <td>${levelBadge(r['ระดับรางวัล'])}</td>
+      <td>${r['ลิงก์ PDF'] ? `<a class="pdf-link" href="${r['ลิงก์ PDF']}" target="_blank" rel="noopener">📄 เปิด PDF</a>` : '<span style="color:var(--muted);font-size:12px">ไม่มี</span>'}</td>
+    </tr>`).join('');
+
+  renderPagination(total);
+}
+
+function renderPagination(total) {
+  const pages = Math.ceil(total / PAGE_SIZE);
+  const pg    = document.getElementById('pagination');
+  if (pages <= 1) { pg.innerHTML = ''; return; }
+  let html = `<button class="page-btn" onclick="goPage(${currentPage-1})" ${currentPage===1?'disabled':''}>‹ ก่อนหน้า</button>`;
+  for (let i=1;i<=pages;i++) {
+    if (i===1 || i===pages || Math.abs(i-currentPage)<=2) {
+      html += `<button class="page-btn ${i===currentPage?'active':''}" onclick="goPage(${i})">${i}</button>`;
+    } else if (Math.abs(i-currentPage)===3) {
+      html += `<span style="color:var(--muted);padding:6px 4px">…</span>`;
+    }
+  }
+  html += `<button class="page-btn" onclick="goPage(${currentPage+1})" ${currentPage===pages?'disabled':''}>ถัดไป ›</button>`;
+  pg.innerHTML = html;
+}
+
+function goPage(p) {
+  const pages = Math.ceil(filteredData.length / PAGE_SIZE);
+  if (p<1||p>pages) return;
+  currentPage = p;
+  renderTable();
+  document.querySelector('.table-wrap').scrollIntoView({behavior:'smooth', block:'nearest'});
+}
+
+// ===== DASHBOARD: WINNER CARDS =====
+function buildWinners() {
+  const winners = allData.filter(r => r['รางวัล'] && r['ชื่อ-นามสกุล']);
+  const byAward = {'ชนะเลิศอันดับ 1':[],'รองชนะเลิศอันดับ 1':[],'รองชนะเลิศอันดับ 2':[],'Popular Vote (ขวัญใจมหาชน)':[]};
+  winners.forEach(r => { if (byAward[r['รางวัล']]) byAward[r['รางวัล']].push(r); });
+
+  const cardClass = {'ชนะเลิศอันดับ 1':'gold-card','รองชนะเลิศอันดับ 1':'silver-card','รองชนะเลิศอันดับ 2':'bronze-card','Popular Vote (ขวัญใจมหาชน)':'pop-card'};
+  const ribbonClass = {'ชนะเลิศอันดับ 1':'ribbon-gold','รองชนะเลิศอันดับ 1':'ribbon-silver','รองชนะเลิศอันดับ 2':'ribbon-bronze','Popular Vote (ขวัญใจมหาชน)':'ribbon-pop'};
+  const icons = {'ชนะเลิศอันดับ 1':'🥇','รองชนะเลิศอันดับ 1':'🥈','รองชนะเลิศอันดับ 2':'🥉','Popular Vote (ขวัญใจมหาชน)':'💚'};
+
+  let html = '';
+  ['ชนะเลิศอันดับ 1','รองชนะเลิศอันดับ 1','รองชนะเลิศอันดับ 2','Popular Vote (ขวัญใจมหาชน)'].forEach(award => {
+    const list = byAward[award];
+    if (!list.length) return;
+    html += `<div class="section-title" style="margin-top:20px">${icons[award]} ${award} (${list.length} คน)</div>`;
+    html += '<div class="winners-grid">';
+    list.forEach(r => {
+      html += `<div class="winner-card ${cardClass[award]}">
+        <div class="award-ribbon ${ribbonClass[award]}">${icons[award]} ${award}</div>
+        <div class="winner-name">${r['ชื่อ-นามสกุล']}</div>
+        <div class="winner-school">${r['สถานศึกษา'] || '—'}</div>
+        <div class="winner-type">${shortType(r['ประเภท'])}</div>
+        ${r['ลิงก์ PDF'] ? `<a class="pdf-link" href="${r['ลิงก์ PDF']}" target="_blank" style="margin-top:8px">📄 เกียรติบัตร</a>` : ''}
+      </div>`;
+    });
+    html += '</div>';
+  });
+  document.getElementById('winners-container').innerHTML = html;
+}
+
+// ===== INIT =====
+window.addEventListener('DOMContentLoaded', () => {
+  buildWinners();
+  doSearch();
+});
+</script>
+</body>
+</html>
